@@ -2,6 +2,12 @@ import csv
 from fractions import Fraction
 from deep_translator import GoogleTranslator
 from matplotlib import colors
+from operator import attrgetter
+
+class Simple_class:
+    def __init__(self, _score, _drink_type):
+        self.score = _score
+        self.drink_type = _drink_type
 
 class Object_student:
     def __init__(self, text_str_list):
@@ -17,7 +23,30 @@ class Object_student:
     def print_all(self):
         print(self.name, self.region, self.sign, self.fav_col, self.is_working, self.getup_time, self.sleep_time, self.drink_type)
 
-    def make_prognose(self, data_list):
+    def count_region(self, all_obj_region_data, obj_region):
+        return all_obj_region_data[self.region+'-'+obj_region]
+
+    def count_sign(self, all_obj_sign_data, obj_sign):
+        return all_obj_sign_data[self.sign+'-'+obj_sign]
+
+    def count_fav_col(self,obj_fav_col):
+        obj_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(obj_fav_col).replace(" ",""))
+        self_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(self.fav_col).replace(" ",""))
+        result_score = 0.0
+        for i in range(0,3):
+            result_score += abs(obj_color[i] - self_color[i])
+        return result_score/3
+
+    def count_is_working(self, obj_is_working):
+        return abs(self.is_working - obj_is_working)
+
+    def count_getup_time(self, all_obj_getup_difference, obj_getup_time):
+        return abs(self.getup_time - obj_getup_time)/all_obj_getup_difference
+
+    def count_sleep_time(self, all_obj_sleep_difference, obj_sleep_time):
+        return (min(abs(self.sleep_time - obj_sleep_time), abs(self.sleep_time - obj_sleep_time + 24.0), abs(self.sleep_time - obj_sleep_time - 24.0)))/all_obj_sleep_difference
+
+    def make_prognose(self, k, data_list):
         region_data = {}
         sign_data = {}
         min_sleep_time = -1.0
@@ -50,62 +79,29 @@ class Object_student:
         print(min_sleep_time,max_sleep_time,sleep_time_difference)
         print(min_getup_time,max_getup_time,getup_difference)
         #Looking for the most similar data
+        all_data_score_drink_list = []
+        for obj_data in data_list:
+            obj_data_score = self.count_region(region_data, obj_data.region) + self.count_sign(sign_data,obj_data.sign) + self.count_fav_col(obj_data.fav_col) + self.count_is_working(obj_data.is_working) + self.count_getup_time(getup_difference, obj_data.getup_time) + self.count_sleep_time(sleep_time_difference, obj_data.sleep_time)
+            obj_data.print_all()
+            print(obj_data_score)
+            local_simple_object = Simple_class(obj_data_score, obj_data.drink_type)
+            all_data_score_drink_list.append(local_simple_object)
+        all_data_score_drink_list.sort(key=attrgetter('score'))
         do_while = True
-        wider_list = []
-        wider_result_dict = {}
-        while(do_while):
-            result_score = -1.0
-            score_amount_dict = {}
-            for obj_data in data_list:
-                obj_data_score = self.count_region(region_data, obj_data.region) + self.count_sign(sign_data,obj_data.sign) + self.count_fav_col(obj_data.fav_col) + self.count_is_working(obj_data.is_working) + self.count_getup_time(getup_difference, obj_data.getup_time) + self.count_sleep_time(sleep_time_difference, obj_data.sleep_time)
-                if((obj_data_score < result_score or result_score == -1.0) and (obj_data_score not in wider_list)):
-                    result_score = obj_data_score
-                    score_amount_dict.clear()
-                    score_amount_dict[obj_data.drink_type] = 1
-                elif(obj_data_score == result_score and obj_data_score not in wider_list):
-                    if(obj_data.drink_type in score_amount_dict.keys()):
-                        score_amount_dict[obj_data.drink_type] += 1
-                    else:
-                        score_amount_dict[obj_data.drink_type] = 1
-                obj_data.print_all()
-                print(obj_data_score)
-            for temp_key in score_amount_dict.keys():
-                if (temp_key in wider_result_dict.keys()):
-                    wider_result_dict[temp_key] += score_amount_dict[temp_key]
+        while(do_while and k != 0):
+            result_dict = {}
+            for i in range (0,k):
+                if(all_data_score_drink_list[i].drink_type in list(result_dict.keys())):
+                    result_dict[all_data_score_drink_list[i].drink_type] += 1
                 else:
-                    wider_result_dict[temp_key] = score_amount_dict[temp_key]
-            print(wider_result_dict)
-            if(list(wider_result_dict.values()).count(max(list(wider_result_dict.values()))) == 1):
+                    result_dict[all_data_score_drink_list[i].drink_type] = 1
+            print(result_dict)
+            if(list(result_dict.values()).count(max(list(result_dict.values()))) == 1):
                 do_while = False
-                print("Out")
-                result = list(wider_result_dict.keys())[list(wider_result_dict.values()).index(max(list(wider_result_dict.values())))]
+                result = list(result_dict.keys())[list(result_dict.values()).index(max(list(result_dict.values())))]
             else:
-                print("Wider")
-                wider_list.append(result_score)
+                k-=1
         return result
-
-    def count_region(self, all_obj_region_data, obj_region):
-        return all_obj_region_data[self.region+'-'+obj_region]
-
-    def count_sign(self, all_obj_sign_data, obj_sign):
-        return all_obj_sign_data[self.sign+'-'+obj_sign]
-
-    def count_fav_col(self,obj_fav_col):
-        obj_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(obj_fav_col).replace(" ",""))
-        self_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(self.fav_col).replace(" ",""))
-        result_score = 0.0
-        for i in range(0,3):
-            result_score += abs(obj_color[i] - self_color[i])
-        return result_score/3
-
-    def count_is_working(self, obj_is_working):
-        return abs(self.is_working - obj_is_working)
-
-    def count_getup_time(self, all_obj_getup_difference, obj_getup_time):
-        return abs(self.getup_time - obj_getup_time)/all_obj_getup_difference
-
-    def count_sleep_time(self, all_obj_sleep_difference, obj_sleep_time):
-        return (min(abs(self.sleep_time - obj_sleep_time), abs(self.sleep_time - obj_sleep_time + 24.0), abs(self.sleep_time - obj_sleep_time - 24.0)))/all_obj_sleep_difference
 
 if __name__ == "__main__":
     object_list = []
@@ -116,7 +112,7 @@ if __name__ == "__main__":
             if text_str[0].isdigit() and text_str[2].lower() != 'н':
                 temp_obj = Object_student(text_str)
                 object_list.append(temp_obj)
-
+    #Creating student
     new_student = Object_student(['','Харитонов Борис Иванович','','МО','Лев','Красный','1','7','9',''])
-    new_student_type_drink = new_student.make_prognose(object_list)
+    new_student_type_drink = new_student.make_prognose(10, object_list)
     print(f"Предполагаю, что {new_student.name} любит: {new_student_type_drink}")
