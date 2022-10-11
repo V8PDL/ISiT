@@ -10,7 +10,7 @@ def add_drink_type(drink_dict, drink_type):
         drink_dict[drink_type] = 1
 
 class attribute:
-    def __init__(self, name, value, compare_func):
+    def __init__(self, name, value, compare_func, weight = 1):
         self.name = name
         self.value = value
         self.min_score = -1.0
@@ -18,9 +18,10 @@ class attribute:
         self.score = -1.0
         self.compare_func = compare_func
         self.normalized_score = -1.0
+        self.weight = weight
 
     def Compare(self, other_value):
-        return self.compare_func(self, other_value)
+        return self.weight * self.compare_func(self, other_value)
     
     def Normalize(self, min_score, max_score):
         self.normalized_score = (self.score - min_score) / (max_score - min_score)
@@ -49,27 +50,19 @@ class attribute:
 class Object_student:
     def __init__(self, text_str_list, region_data = None, sign_data = None):
         self.name = text_str_list[1]
-        self.region = attribute('region', text_str_list[3], attribute.count_region)
-        self.sign = attribute('sign', text_str_list[4], attribute.count_sign)
-
+        self.attributes = {}
+        self.attributes['region'] = attribute('region', text_str_list[3], attribute.count_region)
+        self.attributes['sign'] = attribute('sign', text_str_list[4], attribute.count_sign)
         str_color = text_str_list[5]
         if str_color in colors_dict:
             color = colors_dict[str_color]
         else:
             color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(str_color).replace(" ",""))
             colors_dict[str_color] = color
-        self.fav_col = attribute('fav_col', color, attribute.count_fav_col)
-        self.is_working = attribute('is_working', float(text_str_list[6].replace(',','.')), attribute.count_is_working)
-        self.getup_time = attribute('getup_time', float(text_str_list[7].replace(',','.')), attribute.count_getup_time)
-        self.sleep_time = attribute('sleep_time', float(text_str_list[8].replace(',','.')), attribute.count_sleep_time)
-        
-        self.attributes = {}
-        self.attributes[self.region.name] = self.region
-        self.attributes[self.sign.name] = self.sign
-        self.attributes[self.fav_col.name] = self.fav_col
-        self.attributes[self.is_working.name] = self.is_working
-        self.attributes[self.getup_time.name] = self.getup_time
-        self.attributes[self.sleep_time.name] = self.sleep_time
+        self.attributes['fav_col'] = attribute('fav_col', color, attribute.count_fav_col)
+        self.attributes['is_working'] = attribute('is_working', float(text_str_list[6].replace(',','.')), attribute.count_is_working)
+        self.attributes['getup_time'] = attribute('getup_time', float(text_str_list[7].replace(',','.')), attribute.count_getup_time)
+        self.attributes['sleep_time'] = attribute('sleep_time', float(text_str_list[8].replace(',','.')), attribute.count_sleep_time)
         
         self.drink_type = text_str_list[9].rstrip()
         self.score = -1.0
@@ -135,6 +128,6 @@ if __name__ == "__main__":
                 sign_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
 
     #Creating student
-    new_student = Object_student(['','Харитонов Борис Иванович','','ЮВАО','Лев','Красный','1','7','6',''], region_data, sign_data)
+    new_student = Object_student(['','Харитонов Борис Иванович','','ЮВАО','Лев','Красный','0','1','1',''], region_data, sign_data)
     new_student_type_drink = new_student.make_prognose(10, object_list)
     print(f"Предполагаю, что {new_student.name} любит: {new_student_type_drink}")
