@@ -1,6 +1,3 @@
-!pip install deep_translator
-!pip install matplotlib
-
 import csv
 from fractions import Fraction
 from deep_translator import GoogleTranslator
