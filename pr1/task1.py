@@ -3,12 +3,6 @@ from fractions import Fraction
 from deep_translator import GoogleTranslator
 from matplotlib import colors
 
-def add_drink_type(drink_dict, drink_type):
-    if drink_type in drink_dict:
-        drink_dict[drink_type] += 1
-    else:
-        drink_dict[drink_type] = 1
-
 class attribute:
     def __init__(self, name, value, compare_func, weight = 1):
         self.name = name
@@ -67,14 +61,14 @@ class Student:
         self.drink_type = text_str_list[9].rstrip()
         self.score = -1.0
 
-    def set_score(self):
+    def set_normalized_score(self):
+        [attribute.Normalize() for attribute in self.attributes]
         self.score = sum(a.normalized_score for a in self.attributes.values())
 
     def print_all(self):
-        print('------------------------------------------------------------------------------')
-        print(self.name)
-        [print(attribute.name + " : " + str(attribute.value) + "; score: " + str(attribute.score) + "; mormalized: " + str(attribute.normalized_score)) for attribute in self.attributes.values()]
-        print("Score:" + str(self.score))
+        print(f"------------------------------------------------------------------------------\n{self.name}\nAttributes:")
+        [print(f"{attribute.name}: {str(attribute.value)}; score: {str(attribute.score)}; normalized: {str(attribute.normalized_score)}") for attribute in self.attributes.values()]
+        print("Total Score: " + str(self.score))
 
     def make_prognose(self, k, data_list):
         # Getting scores of attributes
@@ -88,15 +82,19 @@ class Student:
                     curr_attribute.min_score = score
                 attribute.score = score
 
-        [attribute.Normalize(self.attributes[attribute.name].min_score, self.attributes[attribute.name].max_score) for student in data_list for attribute in student.attributes.values()]
-        [student.set_score() for student in data_list]
+        # Getting all scores (normalized)
+        [student.set_normalized_score() for student in data_list]
         data_list.sort(key = lambda x: x.score)
 
         # Get dictionary of (drink_type, drink_count) pairs
         drink_counts_dict = {}
-        [add_drink_type(drink_counts_dict, data_list[i].drink_type) for i in range(0, k)]
+        for i in range(0, k):
+            if data_list[i].drink_type in drink_counts_dict:
+                drink_counts_dict[data_list[i].drink_type] += 1
+            else:
+                drink_counts_dict[data_list[i].drink_type] = 1
 
-        []
+        # Choose most popular variant
         for i in range(k - 1, -1, -1):
             drink_values = list(drink_counts_dict.values())
             if drink_values.count(max(drink_values)) == 1:
@@ -123,9 +121,8 @@ if __name__ == "__main__":
             sign_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
 
     #Creating student
-    new_student = Student(['','Харитонов Борис Иванович','','ЮВАО','Лев','Красный','0','1','1',''])
+    new_student = Student(['','Харитонов Борис Иванович','','ЮВАО','Весы','Красный','0','1','1',''])
     new_student_type_drink = new_student.make_prognose(10, dataset)
     [student.print_all() for student in dataset]
-    print('------------------------------------------------------------------------------')
-    print()
+    print('------------------------------------------------------------------------------\n')
     print(f"Предполагаю, что {new_student.name} любит: {new_student_type_drink}")
