@@ -103,6 +103,7 @@ class Student:
                 drink_counts_dict[data_list[i].drink_type] -= 1
 
 if __name__ == "__main__":
+    print("Fork of project by Ivanov A.G., Kachanov F.K., Efremov D.S., Gavrilyuk I. P.\nMade by Efremov D.S., Gavrilyuk I. P.\n")
     dataset = []
     colors_dict = {}
     with open('gr.csv', encoding='UTF-8') as file:
