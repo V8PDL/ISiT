@@ -62,7 +62,6 @@ class Student:
         self.score = -1.0
 
     def set_normalized_score(self):
-        [attribute.Normalize() for attribute in self.attributes]
         self.score = sum(a.normalized_score for a in self.attributes.values())
 
     def print_all(self):
@@ -83,6 +82,7 @@ class Student:
                 attribute.score = score
 
         # Getting all scores (normalized)
+        [attribute.Normalize(self.attributes[attribute.name].min_score, self.attributes[attribute.name].max_score) for student in data_list for attribute in student.attributes.values()]
         [student.set_normalized_score() for student in data_list]
         data_list.sort(key = lambda x: x.score)
 
