@@ -47,8 +47,8 @@ class attribute:
     def count_sleep_time(self, obj_sleep_time):
         return abs(self.value - obj_sleep_time)
 
-class Object_student:
-    def __init__(self, text_str_list, region_data = None, sign_data = None):
+class Student:
+    def __init__(self, text_str_list):
         self.name = text_str_list[1]
         self.attributes = {}
         self.attributes['region'] = attribute('region', text_str_list[3], attribute.count_region)
@@ -66,15 +66,14 @@ class Object_student:
         
         self.drink_type = text_str_list[9].rstrip()
         self.score = -1.0
-        self.region_data = region_data
-        self.sign_data = sign_data
 
-    def get_score(self):
+    def set_score(self):
         self.score = sum(a.normalized_score for a in self.attributes.values())
 
     def print_all(self):
+        print('------------------------------------------------------------------------------')
         print(self.name)
-        [print(a.name + " : " + str(a.value)) for a in self.attributes.values()]
+        [print(attribute.name + " : " + str(attribute.value) + "; score: " + str(attribute.score) + "; mormalized: " + str(attribute.normalized_score)) for attribute in self.attributes.values()]
         print("Score:" + str(self.score))
 
     def make_prognose(self, k, data_list):
@@ -90,13 +89,14 @@ class Object_student:
                 attribute.score = score
 
         [attribute.Normalize(self.attributes[attribute.name].min_score, self.attributes[attribute.name].max_score) for student in data_list for attribute in student.attributes.values()]
-        [student.get_score() for student in data_list]
+        [student.set_score() for student in data_list]
         data_list.sort(key = lambda x: x.score)
 
         # Get dictionary of (drink_type, drink_count) pairs
         drink_counts_dict = {}
         [add_drink_type(drink_counts_dict, data_list[i].drink_type) for i in range(0, k)]
 
+        []
         for i in range(k - 1, -1, -1):
             drink_values = list(drink_counts_dict.values())
             if drink_values.count(max(drink_values)) == 1:
@@ -105,29 +105,27 @@ class Object_student:
                 drink_counts_dict[data_list[i].drink_type] -= 1
 
 if __name__ == "__main__":
-    object_list = []
+    dataset = []
     colors_dict = {}
     with open('gr.csv', encoding='UTF-8') as file:
-        reader = csv.reader(file)
-        data = list(reader)
-        for text_str in data:
-            if text_str[0].isdigit() and text_str[2].lower() != 'н':
-                temp_obj = Object_student(text_str)
-                object_list.append(temp_obj)
+        [dataset.append(Student(line)) for line in list(csv.reader(file)) if line[0].isdigit() and line[2].lower() != 'н']
 
-        # Reading "input_region.csv", "input_sign.csv"
-        region_data = {}
-        sign_data = {}
-        with open('input_region.csv', encoding='UTF-8') as input_region:
-            for temp_str in list(csv.reader(input_region)):
-                region_data[temp_str[0] + '-' + temp_str[1]] = float(Fraction(temp_str[2]))
-                region_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
-        with open('input_sign.csv', encoding='UTF-8') as input_data:
-            for temp_str in list(csv.reader(input_data)):
-                sign_data[temp_str[0] + '-' + temp_str[1]] = float(Fraction(temp_str[2]))
-                sign_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
+    # Reading "input_region.csv", "input_sign.csv"
+    region_data = {}
+    sign_data = {}
+    with open('input_region.csv', encoding='UTF-8') as input_region:
+        for temp_str in list(csv.reader(input_region)):
+            region_data[temp_str[0] + '-' + temp_str[1]] = float(Fraction(temp_str[2]))
+            region_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
+    with open('input_sign.csv', encoding='UTF-8') as input_data:
+        for temp_str in list(csv.reader(input_data)):
+            sign_data[temp_str[0] + '-' + temp_str[1]] = float(Fraction(temp_str[2]))
+            sign_data[temp_str[1] + '-' + temp_str[0]] = float(Fraction(temp_str[2]))
 
     #Creating student
-    new_student = Object_student(['','Харитонов Борис Иванович','','ЮВАО','Лев','Красный','0','1','1',''], region_data, sign_data)
-    new_student_type_drink = new_student.make_prognose(10, object_list)
+    new_student = Student(['','Харитонов Борис Иванович','','ЮВАО','Лев','Красный','0','1','1',''])
+    new_student_type_drink = new_student.make_prognose(10, dataset)
+    [student.print_all() for student in dataset]
+    print('------------------------------------------------------------------------------')
+    print()
     print(f"Предполагаю, что {new_student.name} любит: {new_student_type_drink}")
