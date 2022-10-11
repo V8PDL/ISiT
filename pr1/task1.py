@@ -1,3 +1,6 @@
+!pip install deep_translator
+!pip install matplotlib
+
 import csv
 from fractions import Fraction
 from deep_translator import GoogleTranslator
@@ -20,40 +23,45 @@ class attribute:
         self.normalized_score = -1.0
 
     def Compare(self, other_value):
-        return self.compare_func(self.value, other_value)
+        return self.compare_func(self, other_value)
     
     def Normalize(self, min_score, max_score):
         self.normalized_score = (self.score - min_score) / (max_score - min_score)
 
     def count_region(self, obj_region):
-        return region_data[self + '-' + obj_region]
+        return region_data[self.value + '-' + obj_region]
 
     def count_sign(self, obj_sign):
-        return sign_data[self + '-' + obj_sign]
+        return sign_data[self.value + '-' + obj_sign]
 
     def count_fav_col(self, obj_fav_col):
-        obj_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(obj_fav_col).replace(" ",""))
-        self_color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(self).replace(" ",""))
         result_score = 0.0
         for i in range(0,3):
-            result_score += abs(obj_color[i] - self_color[i])
+            result_score += abs(obj_fav_col[i] - self.value[i])
         return result_score
 
     def count_is_working(self, obj_is_working):
-        return abs(self - obj_is_working)
+        return abs(self.value - obj_is_working)
 
     def count_getup_time(self, obj_getup_time):
-        return (min(abs(self - obj_getup_time), abs(self - obj_getup_time + 24.0), abs(self - obj_getup_time - 24.0)))
+        return (min(abs(self.value - obj_getup_time), abs(self.value - obj_getup_time + 24.0), abs(self.value - obj_getup_time - 24.0)))
 
     def count_sleep_time(self, obj_sleep_time):
-        return abs(self - obj_sleep_time)
+        return abs(self.value - obj_sleep_time)
 
 class Object_student:
     def __init__(self, text_str_list, region_data = None, sign_data = None):
         self.name = text_str_list[1]
         self.region = attribute('region', text_str_list[3], attribute.count_region)
         self.sign = attribute('sign', text_str_list[4], attribute.count_sign)
-        self.fav_col = attribute('fav_col', text_str_list[5], attribute.count_fav_col)
+
+        str_color = text_str_list[5]
+        if str_color in colors_dict:
+            color = colors_dict[str_color]
+        else:
+            color = colors.to_rgb(GoogleTranslator(source='auto', target='english').translate(str_color).replace(" ",""))
+            colors_dict[str_color] = color
+        self.fav_col = attribute('fav_col', color, attribute.count_fav_col)
         self.is_working = attribute('is_working', float(text_str_list[6].replace(',','.')), attribute.count_is_working)
         self.getup_time = attribute('getup_time', float(text_str_list[7].replace(',','.')), attribute.count_getup_time)
         self.sleep_time = attribute('sleep_time', float(text_str_list[8].replace(',','.')), attribute.count_sleep_time)
@@ -108,6 +116,7 @@ class Object_student:
 
 if __name__ == "__main__":
     object_list = []
+    colors_dict = {}
     with open('gr.csv', encoding='UTF-8') as file:
         reader = csv.reader(file)
         data = list(reader)
